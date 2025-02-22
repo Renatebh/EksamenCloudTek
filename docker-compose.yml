@@ -1,7 +1,7 @@
 
 services:
   productapi:
-    image: ${DOCKER_REGISTRY-}productapi
+    image: renatehem/eksamen:productapi-v1
     container_name: productapi
     build:
       context: ./ProductApi
@@ -35,7 +35,7 @@ services:
 
   
   nginx:
-    image: nginx:latest
+    image: renatehem/eksamen:nginx-v1
     container_name: nginx
     volumes:
       - "./nginx/nginx.conf:/etc/nginx/nginx.conf"

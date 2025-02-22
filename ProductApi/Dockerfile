@@ -22,7 +22,6 @@ RUN dotnet publish "./ProductApi.csproj" -c $BUILD_CONFIGURATION -o /app/publish
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "ProductApi.dll"]
 
 # Legg til wait-for-it-skriptet
 COPY wait-for-it.sh /wait-for-it.sh
