@@ -1,5 +1,9 @@
 # API & Reverse Proxy Dokumentasjon
 
+Git hub  repository: https://github.com/Renatebh/EksamenCloudTek
+
+
+docker repository: https://hub.docker.com/repository/docker/renatehem/eksamen
 ## Arkitektur og Konfigurasjon
 
 Dette prosjektet består av tre hovedkomponenter:
@@ -20,30 +24,29 @@ Alle komponentene er containerisert ved hjelp av Docker og er koblet sammen i et
 
 - Nginx-proxyen er tilgjengelig på port 80 og videresender forespørsler til Product API-et på port 8080.
 ## Docker Compose Tjenester
--  Product API: Kjører på port 8080, og er avhengig av MySQL-tjenesten for databaseoperasjoner.
-- MySQL: Kjører på standard MySQL-port 3306, og håndterer lagring og uthenting av produktdata.
-- Nginx: Kjører på port 80 og fungerer som en reverse proxy for Product API-et.
+-  **Product API:** Kjører på port 8080, og er avhengig av MySQL-tjenesten for databaseoperasjoner.
+- **MySQL:** Kjører på standard MySQL-port 3306, og håndterer lagring og uthenting av produktdata.
+- **Nginx:** Kjører på port 80 og fungerer som en reverse proxy for Product API-et.
 
 ## Hvordan Løsningene Samhandler
-Nginx Reverse Proxy: Nginx fungerer som en mellommann som videresender innkommende forespørsler til Product API-et. Når en forespørsel gjøres til en av følgende URL-er, håndterer Nginx ruten:
+**Nginx Reverse Proxy:** 
+
+Nginx fungerer som en mellommann som videresender innkommende forespørsler til Product API-et. Når en forespørsel gjøres til en av følgende URL-er, håndterer Nginx ruten:
 
 http://localhost/api/products → Ruter til Product API for å hente alle produkter.
+
 http://localhost/api/products/{id} → Ruter til Product API for å hente et spesifikt produkt basert på ID.
+
 http://localhost/api/health → Returnerer en enkel helse-sjekk ("API OK") for å indikere at systemet er oppe og kjører.
-Product API: Produkt-API-et håndterer forespørsler om produktdata og samhandler med MySQL-databasen for å hente produktinformasjon.
 
-MySQL Database: MySQL-databasen lagrer produktdata og sørger for at Product API-et har tilgang til den nødvendige informasjonen.
+**Product API:** 
 
-## Database
-MySQL-databasen er konfigurert med følgende miljøvariabler:
+Produkt-API-et håndterer forespørsler om produktdata og samhandler med MySQL-databasen for å hente produktinformasjon.
 
-`MYSQL_ROOT_PASSWORD`: gokstad
+**MySQL Database:**
 
-`MYSQL_DATABASE`: -product-db
+MySQL-databasen lagrer produktdata og sørger for at Product API-et har tilgang til den nødvendige informasjonen.
 
-`MYSQL_USER`: product_api
-
-`MYSQL_PASSWORD`: securepass
 
 # Kommandoer for Testing
 
@@ -57,24 +60,25 @@ MySQL-databasen er konfigurert med følgende miljøvariabler:
 
    ```bash
    docker ps
-3. **Tilgang til applikasjonen**:
+   ````
+
+
 
 ## Testing i Postman
 
 #### Hente alle produkter 
-   Denne kommandoen gjør en GET-forespørsel til /api/products for å hente en liste over alle produkter.
 
    ````
    GET http://localhost/api/products
    ````
-#### Hente et spesifikt produkt 
-Denne kommandoen gjør en GET-forespørsel til /api/products/{id} for å hente et spesifikt produkt basert på ID. Erstatt {id} med et gyldig produkt-ID.
+#### Hente et spesifikt produkt på id
+
 
 ````
 GET http://localhost/api/products/1
 ````
 #### Health Check 
-Denne kommandoen gjør en GET-forespørsel til /api/health for å sjekke om API-et er oppe og kjører.
+
 ````
 GET http://localhost/api/health
 ````
@@ -82,47 +86,27 @@ GET http://localhost/api/health
 
 ## Teste API with curl
 
-For å teste API-et ditt, kan du bruke curl:
+For å teste API-et, kan du også bruke curl:
 
 1. **For å se om apiet kjører:**
-   Åpne terminalen og kjør:
 
    ```bash
-   curl -v http://localhost/api/product/health
+   curl http://localhost/api/product/health
    ````
 2. **For å hente produkter:**
-   Åpne terminalen og kjør:
 
    ```bash
-   curl -v http://localhost/api/product
+   curl http://localhost/api/product
    ````
 3. **For å hente ett spesifikt produkt:**
-   Åpne terminalen og kjør:
+  
 
    ```bash
-   curl -v http://localhost/api/product/1
+   curl http://localhost/api/product/1
    ````
 
-## Teste API i GitBash
-````
-winpty docker exec -it mysql mysql -u product_api -p
-`````
-Skriv inn passordet: `securepass`
 
-Du er nå inne i mysql containeren og kan bruke sql spørringer mot tabellen.
-````
-SHOW DATABASES;
-
-USE product-db;
-
-SHOW TABLES;
-
-SELECT * FROM Products;
-````
-# Feilsøking og Logg
-Hvis du støter på problemer, kan du sjekke loggene for å få mer informasjon om hva som skjer.
-
-
+<br/>
 
 # Publisering av Docker-images til Docker Hub
 
@@ -134,7 +118,7 @@ Hvis du støter på problemer, kan du sjekke loggene for å få mer informasjon 
 
    Du må være i samme mappe som dockerfilen for å bygge imaget
    ````
-   docker build -t renatehem/eksamen:nginx-v1 ./nginx
+   docker build -t renatehem/eksamen:nginx-v1 .
    ````
 4. Push til Docker HUB:
 
@@ -157,8 +141,13 @@ Hvis du støter på problemer, kan du sjekke loggene for å få mer informasjon 
    ````
 
 
+<br/>
+
 
 # Oppgave 3: Deploy Api til Aws Ec2 Nginx.
+
+
+## 1. Deploy
 
  1.  **Sett opp EC2-instansen**
 
@@ -166,39 +155,41 @@ Hvis du støter på problemer, kan du sjekke loggene for å få mer informasjon 
      Konfigurer sikkerhetsgruppen for å åpne portene 80 (HTTP) og 8080 (API) for offentlig tilgang.
    
 
-   Launch instances -> gi den ett navn -> velg amazone Linux > key pair (ssh) 
+    Launch instances -> gi den ett navn -> velg amazone Linux > key pair (ssh) 
 
-   Network settings
-   - Legg inn vpc du laget
-   - Subnet velg public 1 for å nå api
-   - Velg public IP **Enable**
-   - Security group name lag et passende navn eks eksamen-sg
-   - Tilate hva slags trafikk som skal komme inn:
-     Vi må tilate ssh(for å komme inn med terminalen) og http (for å komme inn med browser)
+  2. **Network settings**
 
-   Launch instance
+    - Legg inn vpc du laget
 
-   Connect -> ssh client
-   kopier ssh nøkkelen Eksempel
+    - Subnet velg public 1 for å nå api
+
+    - Velg public IP **Enable**
+
+    - Security group name lag et passende navn eks eksamen-sg
+
+    - Tilate hva slags trafikk som skal komme inn:
+
+      Vi må tilate ssh(for å komme inn med terminalen) og http (for å komme inn med browser)
+
+  3. **Launch instance**
+
+      - Connect -> ssh client
+
+      - Kopier ssh nøkkelen Eksempel
 
    ````
    ssh -i "eksamen.pem" ec2-user@ec2-13-49-225-186.eu-north-1.compute.amazonaws.com
 
    ````
 
-   Åpne en terminal feks Power shell  og naviger til pem fila som automatisk ble lastet ned når man laget vpc.
+   4. Åpne en terminal feks Power shell  og naviger til pem fila som automatisk ble lastet ned når man laget vpc.
    ```Power shell	
    cd /c/Users/Renate/Downloads
    ```
 
-   lim inn ssh nøkkel
+   5. Lim inn ssh nøkkel
    ````Power shell
    ssh -i "eksamen.pem" ec2-user@ec2-13-49-225-186.eu-north-1.compute.amazonaws.com
-   ````
-
-   Hvis man får problemer med nøkkel, legg inn dette
-   ```sh
-   chmod 400 eksamen.pem
    ````
 
 Før man installerer docker sørg for at systemet er oppdatert
@@ -206,9 +197,10 @@ Før man installerer docker sørg for at systemet er oppdatert
 sudo yum update -y
 ````
 
-2.  **Installer Docker og Docker Compose på EC2**
+### 2. **Installer Docker og Docker Compose på EC2**
 
-    Kjør følgende kommandoer for å installere Docker på EC2:
+  Kjør følgende kommandoer for å installere Docker på EC2:
+
    ````
    sudo yum install -y docker
 
@@ -370,48 +362,85 @@ JSON:
     Testet API-et via URL-en `http://51.20.184.218/api/product` i nettleser og cURL for å bekrefte at dataene ble returnert korrekt.
 
 
-# Opprett en MySQL RDS-instans i Free Tier innenfor samme VPC som EC2-instansen
-Følg disse stegene:
+# Oppgave 4: Migrering til AWS RDS (20%)
+### Opprett en MySQL RDS-instans i Free Tier
 
-1. Logg inn på AWS Console
-  - Gå til AWS RDS-konsollen.
+  **Handling:**
 
-2. Opprett en ny RDS-instans
+  Opprettet en MySQL RDS-instans via AWS Management Console.
+  Instansen ble plassert i samme VPC som EC2-instansen for å sikre intern kommunikasjon.
 
-  - Klikk på Create database
-  - Velg MySQL som database-engine
-  - Velg Free Tier
-  - Velg MySQL 8.0 (eller nyere)
-  - DB-instance identifier: product-db
-  - Master username: product-api
-  - Master password: securepass
-  - Velg t3.micro som instance type (gratisnivå)
+  **Konfigurasjon:**
+  ````
+  Database: product_db
+  Brukernavn: product-api
+  Passord: securepass
+````
 
-3. Velg nettverksinnstillinger
+### Konfigurer RDS
 
-  - VPC: Velg samme VPC som EC2-instansen kjører i
-  - Subnet group: Bruk standard eller lag en ny
-  - Public access: NEI (forbedrer sikkerheten)
-  - Security group: Velg EC2-instansens sikkerhetsgruppe
-  - Database name: product_db
+ **Handling:**
 
-4. Opprett RDS-instansen
+  Oppdaterte RDS-sikkerhetsgruppen slik at den tillater tilkobling fra EC2-instansens sikkerhetsgruppe på port 3306.
 
-  - Klikk på Create database
-  - Vent noen minutter til den blir tilgjengelig
+  **Resultat:**
 
-# 2. Tillat tilkobling fra EC2-instansen
+   RDS-databasen kan nå nås fra EC2-instansen via dens endepunkt.
 
-For at EC2 skal kunne koble til RDS:
+### Modifiser docker-compose.yml på EC2-instansen
 
-  1. Gå til EC2 > Security Groups
+**Handling:**
 
-  2. Finn Security Groupen som RDS-instansen bruker
+  Fjernet MySQL-containeren fra docker-compose.yml for å benytte RDS i stedet.
+  Oppdatert API-konfigurasjonen (environment) til å bruke den nye connection stringen med RDS-endepunktet. Jeg måtte også lage ett nytt bilde med connection til RDS databasen.
+  
+  Eksempel på oppdatert docker-compose.yml:
 
-  3. Klikk på Inbound Rules > Edit Inbound Rules
+```yaml
+services:
+  productapi:
+    image: renatehem/eksamen:productapi-v2
+    container_name: productapi
+    ports:
+      - "8080:8080"
+    environment:
+      - CONNECTION_STRING=server=product-db.c9y6cqkmwx18.eu-north-1.rds.amazonaws.com;database=product_db;uid=product_api;pwd=securepass;port=3306
+    networks:
+      - backend
 
-  4. Legg til en regel:
+  nginx:
+    image: renatehem/eksamen:nginx-v1
+    container_name: nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - productapi
+    networks:
+      - backend
 
-    - Type: MySQL/Aurora (port 3306)
-    - Source: Security Groupen til EC2-instansen
-    - Klikk Save rules
+networks:
+  backend:
+  ````
+### Oppsett av den initielle Products-tabellen i RDS
+
+**Handling:**
+
+Tabellen i RDS ble opprettet igjennom entityframework så jeg måtte slette den tabellen jeg allerede hadde lagt inn.
+
+### Test API-et for å verifisere løsningen
+**Handling:**
+
+Etter oppdateringene ble API-et startet jeg docker-compose på EC2-instansen.
+Testet API-endepunktene (f.eks. via curl eller Postman) for å bekrefte at API-et nå kobler seg til RDS-databasen.
+
+**Verifisering:**
+
+Endepunkter som ``http://13.15.161.23/api/products`` bekreftet at data ble hentet riktig via RDS.
+```bash
+$ curl http://13.51.161.23/api/product
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   285    0   285    0     0    446      0 --:--:-- --:--:-- --:--:--   446[{"id":1,"name":"Laptop","brand":"Dell","price":12999.00,"stock":50},{"id":2,"name":"Smartphone","brand":"Samsung","price":7999.00,"stock":100},{"id":3,"name":"Tablet","brand":"Apple","price":9999.00,"stock":30},{"id":4,"name":"Smartwatch","brand":"Fitbit","price":2499.00,"stock":80}]
+````
+
+Oppgave 5 er ikke gjort desverre

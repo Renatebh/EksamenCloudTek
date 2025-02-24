@@ -30,7 +30,7 @@ namespace ProductApi
             using (var scope = app.Services.CreateScope())
             {
                 var context = scope.ServiceProvider.GetRequiredService<ProductContext>();
-                context.Database.Migrate(); // Kjør migreringene automatisk
+                context.Database.Migrate(); 
             }
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
