@@ -1,6 +1,7 @@
 
 using Microsoft.EntityFrameworkCore;
 using ProductApi.Data;
+using ProductApi.Middleware;
 
 namespace ProductApi
 {
