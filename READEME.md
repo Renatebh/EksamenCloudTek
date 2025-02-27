@@ -371,8 +371,33 @@ JSON:
 **Handling:**
 
   Fjernet MySQL-containeren fra docker-compose.yml for å benytte RDS i stedet.
-  Oppdatert API-konfigurasjonen (environment) til å bruke den nye connection stringen med RDS-endepunktet. Jeg måtte også lage ett nytt bilde av api med connection til RDS databasen.
+  Oppdatert API-konfigurasjonen (environment) til å bruke den nye connection stringen med RDS-endepunktet. 
   
+  Jeg måtte også lage ett nytt bilde av api med connection til RDS databasen.
+  
+  ```json
+
+  {
+    "Logging": {
+        "LogLevel": {
+            "Default": "Information",
+            "Microsoft.AspNetCore": "Warning"
+        }
+    },
+    "AllowedHosts": "*",
+    "ConnectionStrings": {
+        "DefaultConnection": "server=product-db.c9y6cqkmwx18.eu-north-1.rds.amazonaws.com;database=product_db;uid=product_api;pwd=securepass;port=3306"
+    },
+    "Kestrel": {
+        "Endpoints": {
+            "Http": {
+                "Url": "http://0.0.0.0:8080"
+            }
+        }
+    }
+}
+
+  ````
   Eksempel på oppdatert docker-compose.yml:
 
 ```yaml
@@ -528,7 +553,6 @@ public class CloudWatchMetricsService
 #### Ett middleware for å telle api call.
 
 ```charp
-
 using ProductApi.Services;
 
 namespace ProductApi.Middleware
@@ -558,7 +582,7 @@ namespace ProductApi.Middleware
             _requestCount++;
             _logger.LogInformation("API call to {Path} count: {Count}", context.Request.Path, _requestCount);
 
-            // Send metrikken til CloudWatch
+  
             await _metricsService.SendApiCallCountMetricAsync(_requestCount);
 
             await _next(context);
@@ -584,4 +608,32 @@ var app = builder.Build();
 app.UseMiddleware<ApiCallCount>();
 
 app.Run();
+````
+
+Lage nytt bilde med den oppdaterte funksjonaliteten og bruke det nye bildet i compose
+
+```yml
+services:
+  productapi:
+    image: renatehem/eksamen:productapi-v5
+    container_name: productapi
+    ports:
+      - "8080:8080"
+    environment:
+      - CONNECTION_STRING=server=product-db.c9y6cqkmwx18.eu-north-1.rds.amazonaws.com;database=product_db;uid=product_api;pwd=securepass;port=3306
+    networks:
+      - backend
+
+  nginx:
+    image: renatehem/eksamen:nginx-v1
+    container_name: nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - productapi
+    networks:
+      - backend
+
+networks:
+  backend:
 ````
