@@ -10,15 +10,19 @@ namespace ProductApi.Controllers
     {
         private readonly IProductRepo _repo;
 
-        public ProductController(IProductRepo repo)
+        private readonly ILogger<ProductController> _logger;
+
+        public ProductController(IProductRepo repo, ILogger<ProductController> logger)
         {
             _repo = repo;
+            _logger = logger;
         }
 
 
         [HttpGet]
         public ActionResult<IEnumerable<Product>> GetAllProducts()
         {
+            _logger.LogInformation("Getting all products");
             var products = _repo.GetAllProducts();
             return Ok(products);
         }

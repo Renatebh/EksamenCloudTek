@@ -63,27 +63,6 @@ MySQL-databasen lagrer produktdata og sørger for at Product API-et har tilgang 
    ````
 
 
-
-## Testing i Postman
-
-#### Hente alle produkter 
-
-   ````
-   GET http://localhost/api/products
-   ````
-#### Hente et spesifikt produkt på id
-
-
-````
-GET http://localhost/api/products/1
-````
-#### Health Check 
-
-````
-GET http://localhost/api/health
-````
-
-
 ## Teste API with curl
 
 For å teste API-et, kan du også bruke curl:
@@ -392,7 +371,7 @@ JSON:
 **Handling:**
 
   Fjernet MySQL-containeren fra docker-compose.yml for å benytte RDS i stedet.
-  Oppdatert API-konfigurasjonen (environment) til å bruke den nye connection stringen med RDS-endepunktet. Jeg måtte også lage ett nytt bilde med connection til RDS databasen.
+  Oppdatert API-konfigurasjonen (environment) til å bruke den nye connection stringen med RDS-endepunktet. Jeg måtte også lage ett nytt bilde av api med connection til RDS databasen.
   
   Eksempel på oppdatert docker-compose.yml:
 
@@ -442,5 +421,167 @@ $ curl http://13.51.161.23/api/product
                                  Dload  Upload   Total   Spent    Left  Speed
 100   285    0   285    0     0    446      0 --:--:-- --:--:-- --:--:--   446[{"id":1,"name":"Laptop","brand":"Dell","price":12999.00,"stock":50},{"id":2,"name":"Smartphone","brand":"Samsung","price":7999.00,"stock":100},{"id":3,"name":"Tablet","brand":"Apple","price":9999.00,"stock":30},{"id":4,"name":"Smartwatch","brand":"Fitbit","price":2499.00,"stock":80}]
 ````
+<br />
 
-Oppgave 5 er ikke gjort desverre
+# Oppgave 5: AWS CloudWatch Monitorering
+
+<br />
+
+### IAM-rolle konfigurasjonen
+ Opprette en IAM-rolle med nødvendige tillatelser:
+
+- Gå til IAM-konsollen.
+
+- Velg "Roles" og deretter "Create role".
+
+- Velg "AWS-servicec" og under "Use Cases velg "EC2".
+
+- Add persmissions valgte jeg CloudWatchEventsFullAccess - for alle retigheter
+
+- Role name ga jeg "CloudWatchRole" -> "Create".
+
+<br/>
+
+###  CloudWatch Agent oppsett 
+**Amazon Linux og Ubuntu:** 
+
+  - Åpne terminalen og kjør følgende kommandoer:
+
+  ```bash
+  wget https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm
+  sudo rpm -U ./amazon-cloudwatch-agent.rpm
+  ````
+
+ - Kjør konfigurasjonsveiviseren:
+
+ ```bash
+ sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-config-wizard
+ ```
+
+<br />
+
+ ## Konfigurasjon av CloudWatch Dashboard
+
+#### 1. Opprette et Dashboard:
+
+    - Gå til CloudWatch-konsollen.
+
+    - Klikk på "Dashboards" i navigasjonsmenyen.
+
+    - Velg "Create dashboard" og gi det et navn.
+
+#### 2. Legge til Widgets:
+
+    - Etter å ha opprettet dashboardet, klikk "Add widget".
+
+    - Velg ønsket widget-type (f.eks. Line, Stacked area, etc.).
+
+    - Klikk "Configure" for å velge hvilke metrikker som skal vises.
+
+    - Velg riktig namespace (f.eks. "ProductApi").
+
+    - Velg de metrikker du ønsker å inkludere og konfigurer visningsalternativer etter behov.
+
+<br/> 
+
+## 3. Kodeendringer i API-et for metrikk-logging
+
+
+
+#### Opprettet en tjeneste for for sending av metrikker til cloudWatch.
+
+```csharp
+using Amazon.CloudWatch;
+using Amazon.CloudWatch.Model;
+
+public class CloudWatchMetricsService
+{
+    private readonly IAmazonCloudWatch _cloudWatchClient;
+
+    public CloudWatchMetricsService(IAmazonCloudWatch cloudWatchClient)
+    {
+        _cloudWatchClient = cloudWatchClient;
+    }
+
+    public async Task SendMetricAsync(string metricName, double value)
+    {
+        var metricData = new MetricDatum
+        {
+            MetricName = metricName,
+            Unit = StandardUnit.Count,
+            Value = value,
+            Timestamp = DateTime.UtcNow
+        };
+
+        var request = new PutMetricDataRequest
+        {
+            Namespace = "ProductApi",
+            MetricData = new List<MetricDatum> { metricData }
+        };
+
+        await _cloudWatchClient.PutMetricDataAsync(request);
+    }
+}
+
+````
+
+#### Ett middleware for å telle api call.
+
+```charp
+
+using ProductApi.Services;
+
+namespace ProductApi.Middleware
+{
+    public class ApiCallCount
+    {
+        private readonly RequestDelegate _next;
+        private readonly ILogger<ApiCallCount> _logger;
+        private readonly CloudWatchMetricsService _metricsService;
+        private static int _requestCount = 0;
+
+        public ApiCallCount(RequestDelegate next, ILogger<ApiCallCount> logger, CloudWatchMetricsService metricsService)
+        {
+            _next = next;
+            _logger = logger;
+            _metricsService = metricsService;
+        }
+
+        public async Task Invoke(HttpContext context)
+        {
+            if (context.Request.Path.StartsWithSegments("/swagger"))
+            {
+                await _next(context);
+                return;
+            }
+
+            _requestCount++;
+            _logger.LogInformation("API call to {Path} count: {Count}", context.Request.Path, _requestCount);
+
+            // Send metrikken til CloudWatch
+            await _metricsService.SendApiCallCountMetricAsync(_requestCount);
+
+            await _next(context);
+        }
+    }
+}
+
+````
+
+### Integrasjon i applikasjonen:
+
+For å ta i bruk denne midddleware i ASP.NET Core-applikasjon, registreres CloudWatchMetricsService som en tjeneste og legges til ApiCallCount-middleware i HTTP-pipelinen.
+
+```csharp
+var builder = WebApplication.CreateBuilder(args);
+
+// Registrer CloudWatchMetricsService som en singleton
+builder.Services.AddSingleton<CloudWatchMetricsService>();
+
+var app = builder.Build();
+
+// Legger til ApiCallCount-middleware i pipelinen
+app.UseMiddleware<ApiCallCount>();
+
+app.Run();
+````
